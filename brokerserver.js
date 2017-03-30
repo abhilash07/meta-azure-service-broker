@@ -14,12 +14,15 @@ var log = common.getLogger(common.LOG_CONSTANTS.BROKER);
 
 msRestRequest.init(config.azure);
 
+// Brokers listen for '<operation>-<serviceId>' ex: 'poll-fb9bc99e-0aa9-11e6-8a8a-000d3a002ed5'
 var addListeners = function(serviceId, serviceModule) {
-  broker.on('provision-' + serviceId, serviceModule.provision);
-  broker.on('poll-' + serviceId, serviceModule.poll);
-  broker.on('deprovision-' + serviceId, serviceModule.deprovision);
-  broker.on('bind-' + serviceId, serviceModule.bind);
-  broker.on('unbind-' + serviceId, serviceModule.unbind);
+  var operations = ['provision', 'poll', 'deprovision', 'bind', 'unbind', 'update'];
+  operations.forEach(function(operation) {
+    if (serviceModule.hasOwnProperty(operation)){
+      broker.log.debug('Adding listener %s-%s', operation, serviceId);
+      broker.on(operation + '-' + serviceId, serviceModule[operation]);
+    }
+  });
 };
 
 log.info('Starting to collect the service offering and plans of each service module...');
