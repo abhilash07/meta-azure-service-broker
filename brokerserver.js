@@ -19,7 +19,7 @@ var addListeners = function(serviceId, serviceModule) {
   var operations = ['provision', 'poll', 'deprovision', 'bind', 'unbind', 'update'];
   operations.forEach(function(operation) {
     if (serviceModule.hasOwnProperty(operation)){
-      broker.log.debug('Adding listener %s-%s', operation, serviceId);
+      log.debug('Adding listener %s-%s', operation, serviceId);
       broker.on(operation + '-' + serviceId, serviceModule[operation]);
     }
   });
