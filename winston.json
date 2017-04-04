@@ -1,6 +1,6 @@
 {
   "console": {
-    "level": "info",
+    "level": "debug",
     "debugStdout": true,
     "colorize": true,
     "prettyPrint": true
