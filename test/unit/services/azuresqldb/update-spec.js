@@ -199,8 +199,12 @@ describe('SqlDb - Update', function () {
 
         before(function() {
             broker = new EventEmitter();
+            var updateServiceInstanceStub = sinon.stub().yields(null);
+            var getServiceInstanceStub = sinon.stub().yields(null, { service_id: 'myServiceUUID' });
+
             broker.db = {
-                getServiceInstance: function (instanceId, callback) { return callback(null, { service_id: 'myServiceUUID' });}
+                getServiceInstance: getServiceInstanceStub,
+                updateServiceInstanceProvisioningPendingResult: updateServiceInstanceStub
             };
             broker.on('update-myServiceUUID', azuresqldb.update);
             // sinon.stub(broker, 'db.getServiceInstance').returns({hello:'world'});
@@ -215,7 +219,13 @@ describe('SqlDb - Update', function () {
         it('should not exist error', function(done){
             // (broker, req, res, done)
             Handlers.handleUpdateRequest(broker, req, res, done);
+        });
 
+        it('should return 200 code on success', function () {
+            var done = sinon.spy();
+            Handlers.handleUpdateRequest(broker, req, res, done);
+            res.send.calledOnce.should.be.true();
+            res.send.calledWithExactly(200, {});
         });
     });
 });
