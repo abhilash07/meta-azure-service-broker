@@ -53,7 +53,42 @@ describe('SqlDb - Update', function () {
                 'transparentDataEncryption': true
             },
             'last_operation': 'provision',
-            'provisioning_result': '{"tags":{"user-agent":"meta-azure-service-broker"},"id":"/subscriptions/e5839dfd-61f0-4b2f-b06f-de7fc47b5998/resourceGroups/user-rg1/providers/Microsoft.Sql/servers/user-mysqlsvr/databases/mydb","name":"mydb","type":"Microsoft.Sql/servers/databases","location":"West US","kind":"v12.0,user","properties":{"databaseId":"7ee66e8f-32bd-46d9-8a6a-a67ef166080b","edition":"Basic","status":"Online","serviceLevelObjective":"Basic","collation":"SQL_Latin1_General_CP1_CI_AS","maxSizeBytes":"2147483648","creationDate":"2017-03-24T04:50:43.32Z","currentServiceObjectiveId":"dd6d99bb-f193-4ec1-86f2-43d3bccbc49c","requestedServiceObjectiveId":"dd6d99bb-f193-4ec1-86f2-43d3bccbc49c","requestedServiceObjectiveName":"Basic","sampleName":null,"defaultSecondaryLocation":"East US","earliestRestoreDate":"2017-03-24T05:01:15.533Z","elasticPoolName":null,"containmentState":2,"readScale":"Disabled","failoverGroupId":null},"operation":"CreateLogicalDatabase","startTime":"/Date(1490331043055+0000)/","resourceGroup":"user-rg1","sqlServerName":"user-mysqlsvr","fullyQualifiedDomainName":"user-mysqlsvr.database.windows.net","administratorLogin":"user","administratorLoginPassword":"OpsMgr2007R3"}'
+            'provisioning_result': {
+                'tags': {
+                    'user-agent': 'meta-azure-service-broker'
+                },
+                'id': '/subscriptions/e5839dfd-61f0-4b2f-b06f-de7fc47b5998/resourceGroups/user-rg1/providers/Microsoft.Sql/servers/user-mysqlsvr/databases/mydb',
+                'name': 'mydb',
+                'type': 'Microsoft.Sql/servers/databases',
+                'location': 'West US',
+                'kind': 'v12.0,user',
+                'properties': {
+                    'databaseId': '7ee66e8f-32bd-46d9-8a6a-a67ef166080b',
+                    'edition': 'Basic',
+                    'status': 'Online',
+                    'serviceLevelObjective': 'Basic',
+                    'collation': 'SQL_Latin1_General_CP1_CI_AS',
+                    'maxSizeBytes': '2147483648',
+                    'creationDate': '2017-03-24T04:50:43.32Z',
+                    'currentServiceObjectiveId': 'dd6d99bb-f193-4ec1-86f2-43d3bccbc49c',
+                    'requestedServiceObjectiveId': 'dd6d99bb-f193-4ec1-86f2-43d3bccbc49c',
+                    'requestedServiceObjectiveName': 'Basic',
+                    'sampleName': null,
+                    'defaultSecondaryLocation': 'East US',
+                    'earliestRestoreDate': '2017-03-24T05:01:15.533Z',
+                    'elasticPoolName': null,
+                    'containmentState': 2,
+                    'readScale': 'Disabled',
+                    'failoverGroupId': null
+                },
+                'operation': 'CreateLogicalDatabase',
+                'startTime': '/Date(1490331043055+0000)/',
+                'resourceGroup': 'user-rg1',
+                'sqlServerName': 'user-mysqlsvr',
+                'fullyQualifiedDomainName': 'user-mysqlsvr.database.windows.net',
+                'administratorLogin': 'user',
+                'administratorLoginPassword': 'currentPassword425'
+            }
         },
         'newParams': {
             'instance_id': 'aa4d7eff-70af-4637-bf5e-398ebaf1ac2c',
