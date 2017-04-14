@@ -18,7 +18,7 @@ mockingHelper.backup();
 describe('SqlDb - Update', function () {
     
     var validParams = {
-        'currentParams': {
+        'instance': {
             'azureInstanceId': 'azure-sqldb-user-mysqlsvr-mydb',
             'status': 'success',
             'timestamp': '2017-03-24T04:51:49.466Z',
@@ -90,14 +90,8 @@ describe('SqlDb - Update', function () {
                 'administratorLoginPassword': 'currentPassword425'
             }
         },
-        'newParams': {
-            'instance_id': 'aa4d7eff-70af-4637-bf5e-398ebaf1ac2c',
-            'service_id': 'fb9bc99e-0aa9-11e6-8a8a-000d3a002ed5',
-            'plan_id': '3819fdfa-0aaa-11e6-86f4-000d3a002ed5',
+        'requested': {
             'parameters': {
-                'resourceGroup': 'user-rg1',
-                'location': 'westus',
-                'sqlServerName': 'user-mysqlsvr',
                 'sqlServerParameters': {
                     'properties': {
                         'administratorLogin': 'user',
@@ -106,12 +100,6 @@ describe('SqlDb - Update', function () {
                 }
             },
             'accepts_incomplete': 'true',
-            'previous_values': {
-                'plan_id': '3819fdfa-0aaa-11e6-86f4-000d3a002ed5',
-                'service_id': 'fb9bc99e-0aa9-11e6-8a8a-000d3a002ed5',
-                'organization_id': 'b499ecff-378e-4e48-ae13-6e027ac9edf4',
-                'space_id': 'fba5706c-74c2-448d-9fc7-ce3f0500557e'
-            }
         },
         'service_id': 'fb9bc99e-0aa9-11e6-8a8a-000d3a002ed5'
     };
@@ -236,9 +224,11 @@ describe('SqlDb - Update', function () {
             broker = new EventEmitter();
             var updateServiceInstanceStub = sinon.stub().yields(null);
             var getServiceInstanceStub = sinon.stub().yields(null, { service_id: 'myServiceUUID' });
+            var setServiceInstanceStub = sinon.stub().yields(null);
 
             broker.db = {
                 getServiceInstance: getServiceInstanceStub,
+                setServiceInstance: setServiceInstanceStub,
                 updateServiceInstanceProvisioningPendingResult: updateServiceInstanceStub
             };
             broker.on('update-myServiceUUID', azuresqldb.update);
