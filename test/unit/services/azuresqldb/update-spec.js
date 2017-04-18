@@ -2,12 +2,13 @@
 /* jshint newcap: false */
 /* global describe, before, it */
 
+var _ = require('underscore');
 var HttpStatus = require('http-status-codes');
-var should = require('should');
 var sinon = require('sinon');
 var cmdUpdate = require('../../../../lib/services/azuresqldb/cmd-update');
 var azuresqldb = require('../../../../lib/services/azuresqldb');
 var EventEmitter = require('events');
+require('should');
 var Handlers, Common;
 
 var mockingHelper = require('../mockingHelper');
@@ -16,7 +17,7 @@ mockingHelper.backup();
 // var sqldbOps = new sqldbOperations(azure);
 
 describe('SqlDb - Update', function () {
-    
+
     var validParams = {
         'instance': {
             'azureInstanceId': 'azure-sqldb-user-mysqlsvr-mydb',
@@ -103,36 +104,63 @@ describe('SqlDb - Update', function () {
         },
         'service_id': 'fb9bc99e-0aa9-11e6-8a8a-000d3a002ed5'
     };
-    
-    var sqldbUpdate; 
-    
+
+    var sqldbUpdate;
+
     describe('cmd-update', function(){
-        before(function () {
+        beforeEach(function () {
             sqldbUpdate = new cmdUpdate(validParams);
         });
-        
-        after(function () { });
-        
-        
+
         it('should not exist error', function (done) {
             sqldbUpdate.update(function updateCallback(err, result) {
-                should.not.exist(err);
+                done(err);
+            });
+        });
+
+        it('should return success', function (done) {
+            sqldbUpdate.update(function updateCallback(err, result) {
                 result.should.deepEqual({ statusCode: HttpStatus.OK, code: HttpStatus.getStatusText(HttpStatus.OK), value: {} });
                 done();
             });
         });
+
+        it('should only update instance password', function(done) {
+
+            var newPassword = validParams.requested.parameters.sqlServerParameters.properties.administratorLoginPassword;
+
+            var updateDiff = {
+                'parameters':{
+                    'sqlServerParameters':{
+                        'properties':{
+                            'administratorLoginPassword': newPassword
+                        }
+                    }
+                },
+                'provisioning_result':{
+                    'administratorLoginPassword': newPassword
+                }
+            };
+
+            var expectedUpdatedInstance = _.extend({}, updateDiff, validParams.instance);
+
+            sqldbUpdate.update(function updateCallback(err, reply, updatedInstance) {
+                updatedInstance.should.deepEqual(expectedUpdatedInstance);
+                done(err);
+            });
+        });
     });
-    
-    
+
+
     describe('index.update', function(){
         before(function () {
             sinon.spy(azuresqldb, 'update');
         });
-        
+
         after(function(){
             azuresqldb.update.restore();
         });
-        
+
         it('should not exist error', function(done){
             var callback = sinon.spy();
             azuresqldb.update(validParams, callback);
@@ -142,7 +170,7 @@ describe('SqlDb - Update', function () {
             done();
         });
     });
-    
+
 
     var config = {
         'azure': {
@@ -200,7 +228,7 @@ describe('SqlDb - Update', function () {
     describe('Broker.HandleUpdateRequest', function(){
 
         var broker;
-        var res;        
+        var res;
         var req = {
             params: {
                 'instance_id': 'aa4d7eff-70af-4637-bf5e-398ebaf1ac2c',
@@ -221,18 +249,19 @@ describe('SqlDb - Update', function () {
 
 
         before(function() {
-            broker = new EventEmitter();
             var updateServiceInstanceStub = sinon.stub().yields(null);
-            var getServiceInstanceStub = sinon.stub().yields(null, { service_id: 'myServiceUUID' });
+            var getServiceInstanceStub = sinon.stub().yields(null, validParams.instance);
             var setServiceInstanceStub = sinon.stub().yields(null);
 
+            broker = new EventEmitter();
             broker.db = {
                 getServiceInstance: getServiceInstanceStub,
                 setServiceInstance: setServiceInstanceStub,
                 updateServiceInstanceProvisioningPendingResult: updateServiceInstanceStub
             };
-            broker.on('update-myServiceUUID', azuresqldb.update);
-            // sinon.stub(broker, 'db.getServiceInstance').returns({hello:'world'});
+
+            var serviceID = validParams.instance['service_id'];
+            broker.on('update-' + serviceID, azuresqldb.update);
             res = {
                 send:sinon.spy()
             };
