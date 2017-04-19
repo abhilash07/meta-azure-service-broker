@@ -18,6 +18,57 @@ mockingHelper.backup();
 
 describe('SqlDb - Update', function () {
 
+    var config = {
+        'azure': {
+            'environment': 'ENVIRONMENT',
+            'subscriptionId': 'SUBSCRIPTION_ID',
+            'tenantId': 'TENANT_ID',
+            'clientId': 'CLIENT_ID',
+            'clientSecret': 'CLIENT_SECRET',
+        },
+        'serviceBroker': {
+            'credentials': {
+                'authUser': 'SECURITY_USER_NAME',
+                'authPassword': 'SECURITY_USER_PASSWORD'
+            }
+        },
+        'database': {
+            'provider': 'AZURE_BROKER_DATABASE_PROVIDER',
+            'server': 'AZURE_BROKER_DATABASE_SERVER',
+            'user': 'AZURE_BROKER_DATABASE_USER',
+            'password': 'AZURE_BROKER_DATABASE_PASSWORD',
+            'database': 'AZURE_BROKER_DATABASE_NAME',
+            'encryptionKey': 'AZURE_BROKER_DATABASE_ENCRYPTION_KEY'
+        },
+        'privilege': {
+            'sqldb': {
+                'allowToCreateSqlServer': 'true'
+            }
+        },
+        'accountPool': {
+            'sqldb': {
+            }
+        },
+        'defaultSettings': {
+            'sqldb': {
+                'transparentDataEncryption': 'true'
+            }
+        }
+    };
+
+    var getConfigStub;
+
+    beforeEach(function () {
+        // Need to mock common.getConfigurations before requiring api-handlers or else it throws at require time
+        Common = require('../../../../lib/common');
+        getConfigStub = sinon.stub(Common, 'getConfigurations').returns(config);
+        Handlers = require('../../../../lib/broker/v2/api-handlers');
+    });
+
+    afterEach(function () {
+        getConfigStub.restore();
+    });
+
     var validParams = {
         'instance': {
             'azureInstanceId': 'azure-sqldb-user-mysqlsvr-mydb',
@@ -105,7 +156,35 @@ describe('SqlDb - Update', function () {
         'service_id': 'fb9bc99e-0aa9-11e6-8a8a-000d3a002ed5'
     };
 
+    var newPassword = validParams.requested.parameters.sqlServerParameters.properties.administratorLoginPassword;
+
+    var updateDiff = {
+        'parameters': {
+            'sqlServerParameters': {
+                'properties': {
+                    'administratorLoginPassword': newPassword
+                }
+            }
+        },
+        'provisioning_result': {
+            'administratorLoginPassword': newPassword
+        }
+    };
+
+    var expectedUpdatedInstance = _.extend({}, updateDiff, validParams.instance);
     var sqldbUpdate;
+
+    describe('Configuration', function(){
+        it('Should request a different password than the current one', function () {
+            newPassword.should.not.equal(validParams.instance['provisioning_result'].administratorLoginPassword);
+        });
+
+        it('Should have the same password in request params and provisionning result', function () {
+            var pass1 = validParams.instance['provisioning_result'].administratorLoginPassword;
+            var pass2 = validParams.instance.parameters.sqlServerParameters.properties.administratorLoginPassword;
+            pass1.should.equal(pass2);
+        });
+    });
 
     describe('cmd-update', function(){
         beforeEach(function () {
@@ -113,117 +192,36 @@ describe('SqlDb - Update', function () {
         });
 
         it('should not exist error', function (done) {
-            sqldbUpdate.update(function updateCallback(err, result) {
+            sqldbUpdate.update(function updateCallback(err, result, updatedInstance) {
                 done(err);
             });
         });
 
         it('should return success', function (done) {
-            sqldbUpdate.update(function updateCallback(err, result) {
+            sqldbUpdate.update(function updateCallback(err, result, updatedInstance) {
                 result.should.deepEqual({ statusCode: HttpStatus.OK, code: HttpStatus.getStatusText(HttpStatus.OK), value: {} });
                 done();
             });
         });
 
         it('should only update instance password', function(done) {
-
-            var newPassword = validParams.requested.parameters.sqlServerParameters.properties.administratorLoginPassword;
-
-            var updateDiff = {
-                'parameters':{
-                    'sqlServerParameters':{
-                        'properties':{
-                            'administratorLoginPassword': newPassword
-                        }
-                    }
-                },
-                'provisioning_result':{
-                    'administratorLoginPassword': newPassword
-                }
-            };
-
-            var expectedUpdatedInstance = _.extend({}, updateDiff, validParams.instance);
-
             sqldbUpdate.update(function updateCallback(err, reply, updatedInstance) {
                 updatedInstance.should.deepEqual(expectedUpdatedInstance);
-                done(err);
+                done();
             });
         });
     });
 
-
     describe('index.update', function(){
-        before(function () {
-            sinon.spy(azuresqldb, 'update');
-        });
-
-        after(function(){
-            azuresqldb.update.restore();
-        });
 
         it('should not exist error', function(done){
-            var callback = sinon.spy();
-            azuresqldb.update(validParams, callback);
-            azuresqldb.update.calledOnce.should.be.true();
-            callback.calledOnce.should.be.true();
-            callback.calledWithExactly(null, { statusCode: HttpStatus.OK});
+            var updateCallback = sinon.spy();
+            azuresqldb.update(validParams, updateCallback);
+            updateCallback.calledOnce.should.be.true();
+            updateCallback.calledWithExactly(null, { statusCode: HttpStatus.OK }, expectedUpdatedInstance);
             done();
         });
     });
-
-
-    var config = {
-        'azure': {
-            'environment': 'ENVIRONMENT',
-            'subscriptionId': 'SUBSCRIPTION_ID',
-            'tenantId': 'TENANT_ID',
-            'clientId': 'CLIENT_ID',
-            'clientSecret': 'CLIENT_SECRET',
-        },
-        'serviceBroker': {
-            'credentials': {
-                'authUser': 'SECURITY_USER_NAME',
-                'authPassword': 'SECURITY_USER_PASSWORD'
-            }
-        },
-        'database': {
-            'provider': 'AZURE_BROKER_DATABASE_PROVIDER',
-            'server': 'AZURE_BROKER_DATABASE_SERVER',
-            'user': 'AZURE_BROKER_DATABASE_USER',
-            'password': 'AZURE_BROKER_DATABASE_PASSWORD',
-            'database': 'AZURE_BROKER_DATABASE_NAME',
-            'encryptionKey': 'AZURE_BROKER_DATABASE_ENCRYPTION_KEY'
-        },
-        'privilege': {
-            'sqldb': {
-                'allowToCreateSqlServer': 'true'
-            }
-        },
-        'accountPool': {
-            'sqldb': {
-            }
-        },
-        'defaultSettings': {
-            'sqldb': {
-                'transparentDataEncryption': 'true'
-            }
-        }
-    };
-
-    var getConfigStub;
-
-
-    beforeEach(function(){
-        // Need to mock common.getConfigurations before requiring api-handlers or else it throws at require time
-        Common = require('../../../../lib/common');
-        getConfigStub = sinon.stub(Common, 'getConfigurations').returns(config);
-        Handlers = require('../../../../lib/broker/v2/api-handlers');
-    });
-
-    afterEach(function(){
-        getConfigStub.restore();
-    });
-
 
     describe('Broker.HandleUpdateRequest', function(){
 
@@ -235,8 +233,7 @@ describe('SqlDb - Update', function () {
                 'parameters': {
                     'sqlServerParameters': {
                         'properties': {
-                            'administratorLogin': 'niroy',
-                            'administratorLoginPassword': 'newPassword425'
+                            'administratorLoginPassword': newPassword
                         }
                     }
                 }
@@ -247,11 +244,12 @@ describe('SqlDb - Update', function () {
             }
         };
 
+        var updateServiceInstanceStub, getServiceInstanceStub, setServiceInstanceStub;
 
-        before(function() {
-            var updateServiceInstanceStub = sinon.stub().yields(null);
-            var getServiceInstanceStub = sinon.stub().yields(null, validParams.instance);
-            var setServiceInstanceStub = sinon.stub().yields(null);
+        beforeEach(function() {
+            getServiceInstanceStub = sinon.stub().yields(null, validParams.instance);
+            updateServiceInstanceStub = sinon.stub().yields(null);
+            setServiceInstanceStub = sinon.stub().yields(null);
 
             broker = new EventEmitter();
             broker.db = {
@@ -267,7 +265,7 @@ describe('SqlDb - Update', function () {
             };
         });
 
-        after(function() {
+        afterEach(function() {
         });
 
         it('should not exist error', function(done){
@@ -275,11 +273,23 @@ describe('SqlDb - Update', function () {
             Handlers.handleUpdateRequest(broker, req, res, done);
         });
 
-        it('should return 200 code on success', function () {
-            var done = sinon.spy();
-            Handlers.handleUpdateRequest(broker, req, res, done);
-            res.send.calledOnce.should.be.true();
+        it('should call methods in order', function (done) {
+            var updateDoneCallback = sinon.spy();
+            Handlers.handleUpdateRequest(broker, req, res, updateDoneCallback);
+            getServiceInstanceStub.calledOnce.should.be.true();
+            // updateServiceInstanceStub.calledOnce.should.be.true();
+            // setServiceInstanceStub.calledOnce.should.be.true();
+            getServiceInstanceStub.calledBefore(updateServiceInstanceStub).should.be.true();
+            // updateServiceInstanceStub.calledBefore(setServiceInstanceStub).should.be.true();
+            done();
+        });
+
+        it('should return 200 code on success', function (done) {
+            var updateDoneCallback = sinon.spy();
+            Handlers.handleUpdateRequest(broker, req, res, updateDoneCallback);
+            // res.send.calledOnce.should.be.true();
             res.send.calledWithExactly(200, {});
+            done();
         });
     });
 });
