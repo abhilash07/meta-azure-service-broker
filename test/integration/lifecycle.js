@@ -27,7 +27,7 @@ function runLifecycle(testMatrix) {
     var credentials = service.credentials;
     var e2e = service.e2e;
     var client = clients[serviceName];
-    
+
     describe(serviceName, function() {
       describe('Provisioning', function() {
         it('should return 422 if accepts_incomplete is not set to true', function(done) {
@@ -48,9 +48,10 @@ function runLifecycle(testMatrix) {
             });
         });
       });
-    
+
       describe('Successful lifecycle', function() {
         it('should provision a service instance successfully', function(done) {
+          this.timeout(60000);
           chai.request(server)
             .put('/v2/service_instances/' + instanceId)
             .set('X-Broker-API-Version', '2.8')
@@ -70,7 +71,7 @@ function runLifecycle(testMatrix) {
               done();
             });
         });
-    
+
         it('should get a conflict error if the resource name is same', function(done) {
           // The instance is different because it's a different service instance
           chai.request(server)
@@ -123,16 +124,17 @@ function runLifecycle(testMatrix) {
         });
 
         it('should validate the provisioning operation', function(done) {
+          var test = this;
           if(client && client.validateProvisioning) {
             client.validateProvisioning(service, done);
           } else {
-            done();
+            test.skip();
           }
         });
-    
+
         it('should get the credentials by the binding operation and the credentials should be workable', function(done) {
           this.timeout(300000);
-    
+
           setTimeout(function() {
             chai.request(server)
               .put('/v2/service_instances/' + instanceId + '/service_bindings/' + bindingId)
@@ -159,7 +161,7 @@ function runLifecycle(testMatrix) {
                   } else {
                     res.body.credentials.should.have.property(key, value);
                   }
-                }); 
+                });
                 if (e2e) {
                   if(client) {
                     client.validateCredential(actualCredentials, function(result) {
@@ -174,10 +176,48 @@ function runLifecycle(testMatrix) {
               });
           }, 10000);
         });
-    
+
+        it('should update the service instance', function(done){
+          this.timeout(60000);
+          var test = this;
+
+          // Skip update if the plan does not support it
+          if (!service.updateParameters){
+            test.skip();
+          }
+
+          setTimeout(function () {
+            chai.request(server)
+              .patch('/v2/service_instances/' + instanceId)
+              .set('X-Broker-API-Version', '2.8')
+              .auth('demouser', 'demopassword')
+              .query({
+                'service_id': serviceId,
+                'plan_id': planId,
+                'accepts_incomplete': true,
+                'parameters':service.updateParameters
+              })
+              .end(function (err, res) {
+                res.should.have.status(200);
+                done(err);
+              });
+          }, 10000);
+        });
+
+        it('should validate the update operation', function (done) {
+          this.timeout(60000);
+
+          var test = this;
+          if (client && client.validateUpdate) {
+            client.validateUpdate(service, done);
+          } else {
+            test.skip();
+          }
+        });
+
         it('should delete the binding', function(done) {
           this.timeout(60000);
-    
+
           setTimeout(function() {
             chai.request(server)
               .delete('/v2/service_instances/' + instanceId + '/service_bindings/' + bindingId)
@@ -193,10 +233,10 @@ function runLifecycle(testMatrix) {
               });
           }, 10000);
         });
-    
+
         it('should deprovision the service instance successfully', function(done) {
           this.timeout(60000);
-    
+
           setTimeout(function() {
             chai.request(server)
               .delete('/v2/service_instances/' + instanceId)
@@ -212,7 +252,7 @@ function runLifecycle(testMatrix) {
               });
           }, 10000);
         });
-    
+
         it('should poll the state of the deprovisioning operation', function(done) {
           this.timeout(3600000);
           var state = 'in progress';
@@ -241,12 +281,12 @@ function runLifecycle(testMatrix) {
             }
           );
         });
-    
+
         it('should call cleaner in the last', function(done) {
           cleaner.clean(provisioningParameters, done);
         });
       });
-    
+
     });
 
   };

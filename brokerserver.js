@@ -30,7 +30,7 @@ log.info('Starting to collect the service offering and plans of each service mod
 var params = {};
 params.azure = config.azure;
 
-var servicesPath = './lib/services';
+var servicesPath = path.resolve(__dirname, 'lib/services');
 var services = [];
 
 fs.readdir(servicesPath, function(err, files) {
@@ -43,7 +43,7 @@ fs.readdir(servicesPath, function(err, files) {
   }).filter(function(file) {
     return fs.statSync(file).isDirectory();
   }).forEach(function(file) {
-    var serviceModule = require('./' + file);
+    var serviceModule = require(file);
     serviceModule.catalog(params, function(err, service) {
       if (err) {
         throw err;

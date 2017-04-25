@@ -11,15 +11,15 @@ module.exports = function(environment) {
   this.validateCredential = function(credential, next) {
     var Connection = require('tedious').Connection;
     var Request = require('tedious').Request;
-    
+
     var serverSuffix = supportedEnvironments[environment]['sqlServerEndpointSuffix'];
-    var config = {  
+    var config = {
       userName: credential.databaseLogin,
       password: credential.databaseLoginPassword,
       server: credential.sqlServerName + serverSuffix,
       options: {encrypt: true, database: credential.sqldbName}
     };
-    
+
     function nextStep(err, message, callback) {
       if (err) {
         log.error(message + ' Error: %j', 'not ', err);
@@ -29,7 +29,7 @@ module.exports = function(environment) {
         callback(null);
       }
     }
-    
+
     var connection;
     async.waterfall([
       function(callback) {
@@ -89,7 +89,7 @@ module.exports = function(environment) {
     var expectedTDE = service.provisioningParameters.transparentDataEncryption;
     var actualTDE = null;
     var connection;
-    
+
     var userName, password;
     if (service.provisioningParameters.sqlServerParameters) {
       userName = service.provisioningParameters.sqlServerParameters.properties.administratorLogin;
@@ -151,5 +151,12 @@ module.exports = function(environment) {
       connection.close();
       next(err);
     });
+  };
+
+  this.validateUpdate = function (service, next) {
+    if (service.updateParameters){
+      log.debug('// TODO sqldbclient should validate update');
+    }
+    next();
   };
 };
