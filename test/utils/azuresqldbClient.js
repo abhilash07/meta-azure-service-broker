@@ -2,6 +2,9 @@ var common = require('../../lib/common');
 var statusCode = require('./statusCode');
 var supportedEnvironments = require('./supportedEnvironments');
 var async = require('async');
+var msRestRequest = require('../../lib/common/msRestRequest');
+var util = require('util');
+var _ = require('underscore');
 
 module.exports = function(environment) {
   var clientName = 'azuresqldbClient';
@@ -155,8 +158,39 @@ module.exports = function(environment) {
 
   this.validateUpdate = function (service, next) {
     if (service.updateParameters){
-      log.debug('// TODO sqldbclient should validate update');
+      log.debug('Modifying the sqlserver password');
+
+      // Actually change the server password
+      var environmentName = process.env['ENVIRONMENT'];
+      var subscriptionId = process.env['SUBSCRIPTION_ID'];
+      var API_VERSIONS = common.API_VERSION[environmentName];
+      var environment = common.getEnvironment(environmentName);
+      var resourceManagerEndpointUrl = environment.resourceManagerEndpointUrl;
+      var resourceGroupName = service.provisioningParameters.resourceGroup;
+      var sqlServerName = service.provisioningParameters.sqlServerName;
+
+      var serverUrl = util.format('%s/subscriptions/%s/resourcegroups/%s/providers/Microsoft.Sql/servers/%s',
+        resourceManagerEndpointUrl,
+        subscriptionId,
+        resourceGroupName,
+        sqlServerName);
+
+      var standardHeaders = {
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Accept': 'application/json'
+      };
+
+      var headers = common.mergeCommonHeaders('sqldb client - createServer', standardHeaders);
+      var params = _.extend({}, service.updateParameters.sqlServerParameters);
+      params.location = service.provisioningParameters.location;
+
+      msRestRequest.PUT(serverUrl, headers, params, API_VERSIONS.SQL, function (err, res, body) {
+        log.debug('Modify request body : %j', body);
+        return next(err, res);
+      });
     }
-    next();
+    else {
+      next();
+    }
   };
 };
