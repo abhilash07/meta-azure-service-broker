@@ -1,11 +1,7 @@
-/* jshint camelcase: false */
-/* jshint newcap: false */
-/* global describe, before, it */
-
 var _ = require('underscore');
 var HttpStatus = require('http-status-codes');
 var sinon = require('sinon');
-var cmdUpdate = require('../../../../lib/services/azuresqldb/cmd-update');
+var CmdUpdate = require('../../../../lib/services/azuresqldb/cmd-update');
 var azuresqldb = require('../../../../lib/services/azuresqldb');
 var EventEmitter = require('events');
 require('should');
@@ -13,8 +9,6 @@ var Handlers, Common;
 
 var mockingHelper = require('../mockingHelper');
 mockingHelper.backup();
-
-// var sqldbOps = new sqldbOperations(azure);
 
 describe('SqlDb - Update', function () {
 
@@ -188,7 +182,7 @@ describe('SqlDb - Update', function () {
 
     describe('cmd-update', function(){
         beforeEach(function () {
-            sqldbUpdate = new cmdUpdate(validParams);
+            sqldbUpdate = new CmdUpdate(validParams);
         });
 
         it('should not exist error', function (done) {
@@ -274,7 +268,7 @@ describe('SqlDb - Update', function () {
             Handlers.handleUpdateRequest(broker, req, res, function() {
                 getServiceInstanceStub.calledOnce.should.be.true();
                 setServiceInstanceStub.calledOnce.should.be.true();
-                res.send.calledOnce.should.be.true();                
+                res.send.calledOnce.should.be.true();
                 getServiceInstanceStub.calledBefore(setServiceInstanceStub).should.be.true();
                 setServiceInstanceStub.calledBefore(res.send).should.be.true();
                 done();
@@ -288,5 +282,26 @@ describe('SqlDb - Update', function () {
                 done();
             });
         });
+
+        describe('should fail', function(){
+            var err;
+            beforeEach(function () {
+                err = { statusCode: 404, message: 'Instance not found' };
+                getServiceInstanceStub = sinon.stub().yields(err, {});
+
+                broker.db = {
+                    getServiceInstance: getServiceInstanceStub,
+                    setServiceInstance: setServiceInstanceStub
+                };
+            });
+
+            it('if can\'t get instance', function (done) {
+                Handlers.handleUpdateRequest(broker, req, res, function () {
+                    res.send.args.should.deepEqual([[404, err]]);
+                    done();
+                });
+            });
+        });
+
     });
 });
