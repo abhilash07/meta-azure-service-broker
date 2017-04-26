@@ -5,6 +5,7 @@ var async = require('async');
 var msRestRequest = require('../../lib/common/msRestRequest');
 var util = require('util');
 var _ = require('underscore');
+var broker = require('../../brokerserver');
 
 module.exports = function(environment) {
   var clientName = 'azuresqldbClient';
@@ -158,39 +159,58 @@ module.exports = function(environment) {
 
   this.validateUpdate = function (service, next) {
     if (service.updateParameters){
-      log.debug('Modifying the sqlserver password');
 
-      // Actually change the server password
-      var environmentName = process.env['ENVIRONMENT'];
-      var subscriptionId = process.env['SUBSCRIPTION_ID'];
-      var API_VERSIONS = common.API_VERSION[environmentName];
-      var environment = common.getEnvironment(environmentName);
-      var resourceManagerEndpointUrl = environment.resourceManagerEndpointUrl;
-      var resourceGroupName = service.provisioningParameters.resourceGroup;
-      var sqlServerName = service.provisioningParameters.sqlServerName;
+      async.waterfall([
+        function (callback){
+          // Actually change the server password so that the rest of the lifecycle does not fail.
+          log.debug('Modifying the sqlserver password');
+          var environmentName = process.env['ENVIRONMENT'];
+          var subscriptionId = process.env['SUBSCRIPTION_ID'];
+          var API_VERSIONS = common.API_VERSION[environmentName];
+          var environment = common.getEnvironment(environmentName);
+          var resourceManagerEndpointUrl = environment.resourceManagerEndpointUrl;
+          var resourceGroupName = service.provisioningParameters.resourceGroup;
+          var sqlServerName = service.provisioningParameters.sqlServerName;
 
-      var serverUrl = util.format('%s/subscriptions/%s/resourcegroups/%s/providers/Microsoft.Sql/servers/%s',
-        resourceManagerEndpointUrl,
-        subscriptionId,
-        resourceGroupName,
-        sqlServerName);
+          var serverUrl = util.format('%s/subscriptions/%s/resourcegroups/%s/providers/Microsoft.Sql/servers/%s',
+            resourceManagerEndpointUrl,
+            subscriptionId,
+            resourceGroupName,
+            sqlServerName);
 
-      var standardHeaders = {
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Accept': 'application/json'
-      };
+          var standardHeaders = {
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Accept': 'application/json'
+          };
 
-      var headers = common.mergeCommonHeaders('sqldb client - createServer', standardHeaders);
-      var params = _.extend({}, service.updateParameters.sqlServerParameters);
-      params.location = service.provisioningParameters.location;
+          var headers = common.mergeCommonHeaders('sqldb client - createServer', standardHeaders);
+          var params = _.extend({}, service.updateParameters.sqlServerParameters);
+          params.location = service.provisioningParameters.location;
 
-      msRestRequest.PUT(serverUrl, headers, params, API_VERSIONS.SQL, function (err, res, body) {
-        log.debug('Modify request body : %j', body);
-        return next(err, res);
+          msRestRequest.PUT(serverUrl, headers, params, API_VERSIONS.SQL, function (err, res, body) {
+            log.debug('Modify request body : %j', body);
+            return callback(err);
+          });
+        },
+        function (callback){
+          broker.db.getServiceInstance(service.instanceId, callback);
+        },
+        function(instance, callback){
+          // Validate password change in instance
+          var newPassword = service.updateParameters.sqlServerParameters.properties.administratorLoginPassword;
+          if (instance.parameters.sqlServerParameters.properties.administratorLoginPassword !== newPassword) {
+            return callback(new Error('New password is wrong in provisionning parameters'));
+          }
+
+          if (instance['provisioning_result'].administratorLoginPassword !== newPassword) {
+            return callback(new Error('New password is wrong in provisionning result'));
+          }
+          callback(null);
+        }
+      ],
+      function(err, result){
+        next(err);
       });
-    }
-    else {
-      next();
     }
   };
 };

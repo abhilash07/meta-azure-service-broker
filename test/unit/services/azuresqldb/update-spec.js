@@ -140,7 +140,6 @@ describe('SqlDb - Update', function () {
             'parameters': {
                 'sqlServerParameters': {
                     'properties': {
-                        'administratorLogin': 'user',
                         'administratorLoginPassword': 'newPassword425'
                     }
                 }
