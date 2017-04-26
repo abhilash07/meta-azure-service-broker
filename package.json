@@ -63,12 +63,13 @@
     "url": "https://github.com/Azure/meta-azure-service-broker/issues"
   },
   "scripts": {
-    "test": "npm -s run-script jshint && npm -s run-script eslint && npm -s run-script cover",
+    "test": "npm -s run-script lint && npm -s run-script cover",
+    "lint": "npm -s run-script jshint && npm -s run-script eslint",
     "jshint": "jshint lib test brokerserver.js --reporter=jslint",
     "eslint": "eslint --cache=true --max-warnings 0 lib test brokerserver.js",
     "unit": "mocha --config test/unit/mocha.opts test/unit/mockLogger test/unit/common/ --recursive test/unit/services/",
     "integration": "mocha --config test/integration/mocha.opts test/integration/catalog.js test/integration/lifecycle.js",
-    "cover": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -- test/unit/mockLogger test/unit/common/ test/unit/services/azurestorage/ test/unit/services/azuredocdb test/unit/services/azurerediscache test/unit/services/azureservicebus test/unit/services/azuresqldb -R spec -t 5000",
+    "cover": "istanbul cover ./node_modules/mocha/bin/_mocha -- --config test/unit/mocha.opts test/unit/mockLogger test/unit/common/ --recursive test/unit/services/",
     "start": "node index.js"
   }
 }

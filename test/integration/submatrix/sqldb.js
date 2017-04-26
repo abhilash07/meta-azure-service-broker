@@ -136,6 +136,6 @@ azuresqldb = {
   },
   e2e: true
 };
-// testMatrix.push(azuresqldb);
+testMatrix.push(azuresqldb);
 
 module.exports = testMatrix;
