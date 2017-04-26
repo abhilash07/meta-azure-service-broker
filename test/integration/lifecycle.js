@@ -283,6 +283,7 @@ function runLifecycle(testMatrix) {
         });
 
         it('should call cleaner in the last', function(done) {
+          this.timeout(60000);
           cleaner.clean(provisioningParameters, done);
         });
       });
