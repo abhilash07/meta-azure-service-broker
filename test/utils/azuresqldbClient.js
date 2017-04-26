@@ -159,7 +159,6 @@ module.exports = function(environment) {
 
   this.validateUpdate = function (service, next) {
     if (service.updateParameters){
-
       async.waterfall([
         function (callback){
           // Actually change the server password so that the rest of the lifecycle does not fail.
@@ -211,6 +210,10 @@ module.exports = function(environment) {
       function(err, result){
         next(err);
       });
+    }
+    else{
+      // No update
+      return next(null);
     }
   };
 };
