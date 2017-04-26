@@ -244,18 +244,16 @@ describe('SqlDb - Update', function () {
             }
         };
 
-        var updateServiceInstanceStub, getServiceInstanceStub, setServiceInstanceStub;
+        var getServiceInstanceStub, setServiceInstanceStub;
 
         beforeEach(function() {
             getServiceInstanceStub = sinon.stub().yields(null, validParams.instance);
-            updateServiceInstanceStub = sinon.stub().yields(null);
             setServiceInstanceStub = sinon.stub().yields(null);
 
             broker = new EventEmitter();
             broker.db = {
                 getServiceInstance: getServiceInstanceStub,
                 setServiceInstance: setServiceInstanceStub,
-                updateServiceInstanceProvisioningPendingResult: updateServiceInstanceStub
             };
 
             var serviceID = validParams.instance['service_id'];
@@ -269,27 +267,26 @@ describe('SqlDb - Update', function () {
         });
 
         it('should not exist error', function(done){
-            // (broker, req, res, done)
             Handlers.handleUpdateRequest(broker, req, res, done);
         });
 
         it('should call methods in order', function (done) {
-            var updateDoneCallback = sinon.spy();
-            Handlers.handleUpdateRequest(broker, req, res, updateDoneCallback);
-            getServiceInstanceStub.calledOnce.should.be.true();
-            // updateServiceInstanceStub.calledOnce.should.be.true();
-            // setServiceInstanceStub.calledOnce.should.be.true();
-            getServiceInstanceStub.calledBefore(updateServiceInstanceStub).should.be.true();
-            // updateServiceInstanceStub.calledBefore(setServiceInstanceStub).should.be.true();
-            done();
+            Handlers.handleUpdateRequest(broker, req, res, function() {
+                getServiceInstanceStub.calledOnce.should.be.true();
+                setServiceInstanceStub.calledOnce.should.be.true();
+                res.send.calledOnce.should.be.true();                
+                getServiceInstanceStub.calledBefore(setServiceInstanceStub).should.be.true();
+                setServiceInstanceStub.calledBefore(res.send).should.be.true();
+                done();
+            });
         });
 
         it('should return 200 code on success', function (done) {
-            var updateDoneCallback = sinon.spy();
-            Handlers.handleUpdateRequest(broker, req, res, updateDoneCallback);
-            // res.send.calledOnce.should.be.true();
-            res.send.calledWithExactly(200, {});
-            done();
+            Handlers.handleUpdateRequest(broker, req, res, function(){
+                res.send.calledOnce.should.be.true();
+                res.send.args.should.deepEqual([[200, {}]]);
+                done();
+            });
         });
     });
 });
