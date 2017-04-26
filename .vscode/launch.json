@@ -36,18 +36,6 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Unit Test update",
-            "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
-            "args": [
-                "--config",
-                "${workspaceRoot}/test/unit/mocha.opts",
-                "${workspaceRoot}/test/unit/services/azuresqldb/update-spec.js"
-            ],
-            "internalConsoleOptions": "openOnSessionStart"
-        },
-        {
-            "type": "node",
-            "request": "launch",
             "name": "Launch Program",
             "program": "${workspaceRoot}/index.js",
             "envFile": "${workspaceRoot}/.env"
