@@ -176,6 +176,7 @@ function runLifecycle(testMatrix) {
         });
 
         it('should update the service instance', function(done){
+          // Limit the duration of this test to 60s
           this.timeout(60000);
           var test = this;
 
